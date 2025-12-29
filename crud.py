@@ -31,7 +31,7 @@ def create_city(db: Session, city: CityCreate):
     return db_city
 
 
-def save_temperature(db, city_id: int, temp: float):
+def add_temperature_to_session(db, city_id: int, temp: float):
     record = models.Temperature(
         city_id=city_id,
         temperature=temp,

@@ -1,9 +1,9 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm.session import Session
 
 import crud
 from database import get_db
-from schema import CityRead, TemperatureRead
+from schema import TemperatureRead
 from services.weather import get_coordinates, fetch_temperature
 
 router = APIRouter()
@@ -18,19 +18,25 @@ async def update_temperature(db: Session = Depends(get_db)):
             continue
 
         temp = await fetch_temperature(lat, lon)
-        crud.save_temperature(db, city.id, temp)
-        db.commit()
+        crud.add_temperature_to_session(db, city.id, temp)
+    db.commit()
     return {"status": "success"}
 
 
 @router.get("/", response_model=list[TemperatureRead])
-async def get_temperature(db: Session = Depends(get_db)):
+async def get_temperature(
+        db: Session = Depends(get_db),
+        city_id: int | None = None,
+):
+    if city_id:
+        return crud.get_city_temperature_list(db, city_id)
     return crud.get_temperature_list(db)
 
 
 @router.get("/{city_id}")
 async def get_city_temperature(city_id: int, db: Session = Depends(get_db)):
     city = crud.get_city_by_id(city_id, db)
-
+    if city is None:
+        raise HTTPException(status_code=404, detail="City not found")
     temps = crud.get_city_temperature_list(db, city.id)
     return temps
