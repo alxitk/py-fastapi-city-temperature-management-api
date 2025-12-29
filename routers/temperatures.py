@@ -29,14 +29,8 @@ async def get_temperature(
         city_id: int | None = None,
 ):
     if city_id:
+        city = crud.get_city_by_id(city_id, db)
+        if not city:
+            raise HTTPException(status_code=404, detail="City not found")
         return crud.get_city_temperature_list(db, city_id)
     return crud.get_temperature_list(db)
-
-
-@router.get("/{city_id}")
-async def get_city_temperature(city_id: int, db: Session = Depends(get_db)):
-    city = crud.get_city_by_id(city_id, db)
-    if city is None:
-        raise HTTPException(status_code=404, detail="City not found")
-    temps = crud.get_city_temperature_list(db, city.id)
-    return temps
